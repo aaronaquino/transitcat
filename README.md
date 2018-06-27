@@ -13,7 +13,7 @@ You'll need to follow these steps once to set up the project:
 2. Install [Postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides) on your machine. An easy way to do this is using Homebrew with the command `brew install postgres`.
 3. In your Terminal, run the commmand `postgres -D /usr/local/var/postgres` to start Postgres.
 4. In a new Terminal tab/window, open the Postgres prompt by typing `psql`. Next create your user using the username and password of your choice by typing `CREATE USER sample_user WITH PASSWORD 'sample_password';`. Finish by typing `CREATE DATABASE transitcat WITH OWNER sample_user;`, which creates a database called `transitcat` and gives your user access. Exit by typing `/q`.
-5. Update your [`settings.py`](https://github.com/StanfordCS194/Me0w/blob/master/src/DjangoSite/DjangoSite/settings.py) file so that Transitcat can find your database. Scroll down to the section that says:
+5. Update your [`settings.py`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/DjangoSite/settings.py) file so that Transitcat can find your database. Scroll down to the section that says:
 ```
 DATABASES = {
     "default": {
@@ -22,14 +22,14 @@ DATABASES = {
 ```
 Replace `"YOUR_USERNAME_HERE"` and `"YOUR_PASSWORD_HERE"` with the values you assigned to your Postgres user.
 
-6. Navigate to the directory containing [`manage.py`](https://github.com/StanfordCS194/Me0w/blob/master/src/DjangoSite/manage.py) and run the following command: `python manage.py migrate`.
+6. Navigate to the directory containing [`manage.py`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/manage.py) and run the following command: `python manage.py migrate`.
 7. Apply for free, personal API keys for [Yelp](https://www.yelp.com/developers/documentation/v3/authentication) and [Google Maps](https://developers.google.com/maps/documentation/javascript/get-api-key).
-  * Add your Yelp API key to [`yelp.py`](https://google.com). Do so by scrolling down to the section that says:
+  * Add your Yelp API key to [`yelp.py`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/snapData/Backend/yelp.py). Do so by scrolling down to the section that says:
 ```
 # TODO: Uncomment the line below and add your Yelp API key.
 # HEADERS={"Authorization":"Bearer YOUR_KEY_HERE"}
 ```
-  * Add your Google Maps API key to [`mapStop.html`](https://google.com) and [`mapTest.html`](https://google.com). Do so by scrolling down to the section that says:
+  * Add your Google Maps API key to [`mapStop.html`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/snapData/templates/snapData/mapStop.html) and [`mapTest.html`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/snapData/templates/snapData/mapTest.html). Do so by scrolling down to the section that says:
 ```
 <script async defer
 src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap">
