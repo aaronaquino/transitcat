@@ -24,12 +24,12 @@ Replace `"YOUR_USERNAME_HERE"` and `"YOUR_PASSWORD_HERE"` with the values you as
 
 6. Navigate to the directory containing [`manage.py`](https://github.com/StanfordCS194/Me0w/blob/master/src/DjangoSite/manage.py) and run the following command: `python manage.py migrate`.
 7. Apply for free, personal API keys for [Yelp](https://www.yelp.com/developers/documentation/v3/authentication) and [Google Maps](https://developers.google.com/maps/documentation/javascript/get-api-key).
-⋅⋅* Add your Yelp API key to [`yelp.py`](https://google.com). Do so by scrolling down to the section that says:
+  * Add your Yelp API key to [`yelp.py`](https://google.com). Do so by scrolling down to the section that says:
 ```
 # TODO: Uncomment the line below and add your Yelp API key.
 # HEADERS={"Authorization":"Bearer YOUR_KEY_HERE"}
 ```
-⋅⋅* Add your Google Maps API key to [`mapStop.html`](https://google.com) and [`mapTest.html`](https://google.com). Do so by scrolling down to the section that says:
+  * Add your Google Maps API key to [`mapStop.html`](https://google.com) and [`mapTest.html`](https://google.com). Do so by scrolling down to the section that says:
 ```
 <script async defer
 src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap">
