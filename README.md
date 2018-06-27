@@ -9,7 +9,7 @@ Every day public transit networks (PTNs) play a critical role in the lives of mi
 
 You'll need to follow these steps once to set up the project:
 
-1. Download a local copy of this entire repository. Be sure to follow the [instructions](https://github.com/StanfordCS194/Me0w/tree/master/src) for setting up your directory structure.
+1. Download a local copy of this entire repository. Be sure to follow the [instructions](https://github.com/aaronaquino/transitcat/blob/master/src/README.md) for setting up your directory structure.
 2. Install [Postgres](https://wiki.postgresql.org/wiki/Detailed_installation_guides) on your machine. An easy way to do this is using Homebrew with the command `brew install postgres`.
 3. In your Terminal, run the commmand `postgres -D /usr/local/var/postgres` to start Postgres.
 4. In a new Terminal tab/window, open the Postgres prompt by typing `psql`. Next create your user using the username and password of your choice by typing `CREATE USER sample_user WITH PASSWORD 'sample_password';`. Finish by typing `CREATE DATABASE transitcat WITH OWNER sample_user;`, which creates a database called `transitcat` and gives your user access. Exit by typing `/q`.

@@ -1,6 +1,6 @@
-### Local Repo Structure
+### Local Repository Structure
 
-The GTFS Data is too big to be local, so set up your project tree as shown below. Note that you will need to create two directories for Data and Results (e.g., saving graphs and their associated data):
+The GTFS data is too big to be local, so please set up your project tree as shown below. Note that you will need to locally create two directories for Data and Results (e.g., saving graphs and their associated data):
 
 ```
 Project/
@@ -18,13 +18,13 @@ Project/
 |
 |--- Results/
 |
-|--- Source/ <--- clone the main Me0w repo here!
+|--- Source/ <--- clone the main Transitcat repo here!
 ```
 
 
 ### Source Code Structure
 
-Our source code is organized as follows:
+If you're curious, our source code is organized as follows:
 
 ```
 README.md <--- This file.
