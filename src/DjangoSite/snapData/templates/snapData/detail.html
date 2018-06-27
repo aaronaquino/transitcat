@@ -1,0 +1,96 @@
+{% extends "snapData/simple.html" %}
+{% load static %}
+
+{% block title %}{{ snapPickle.name }} Data - Transitcat{% endblock %}
+
+{% block style %}
+<style>
+  .modal-text {
+    color: black;
+    text-align: left;
+    text-shadow: none;
+  }
+  img {
+    max-height: 17em
+  }
+  b {
+    color: #314131;
+    text-shadow: none;
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<h1>{{ snapPickle.name }}</h1>
+
+<div class="row">
+  <div class="col-sm-4">
+    <p><b>{{ stats.num_edges }}</b> connections, <b>{{ stats.num_nodes }}</b> stops</p>
+    <p>The minimum number of connections from a stop is <b>{{ stats.min_degree }}</b></p>
+    <p>The average number of connections from a stop is <b>{{ stats.avg_degree }}</b></p>
+    <p>The maximum number of connections from a stop is <b>{{ stats.max_degree }}</b></p>
+    <p>The average clustering coefficient<a href=# data-toggle='modal' data-target='#clusteringModal'><sup>[?]</sup></a> is <b>{{ stats.avg_clust_coeff }}</b></p>
+    
+    <hr>
+    {% if cleanedIds|length > 1 %}
+      <p>Onestop IDs include <b>
+      {% for id in cleanedIds %}
+        {{id}}{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+      </b></p>
+    {% elif cleanedIds|length == 1 %}
+      <p>Onestop ID is <b>{{ cleanedIds.0 }}</b></p>
+    {% else %}
+      <p>No Onestop ID associated</p>
+    {% endif %}
+    <a href="{% url 'snapData:updateFeeds' snapPickle.id %}" class="btn btn-secondary">Update Onestop IDs</a></div>
+
+  <div class="col-sm-8">
+
+    {% with graphImageName='graphimages/'|add:noSpacesName|add:'.png'  %}
+
+    <div class="modal-body">
+        <a href="{% static graphImageName %}">
+            <p><img src= "{% static graphImageName %}" alt="Graph of {{ noSpacesName }}" class="img-thumbnail"></p>
+        </a>
+    </div>
+    <p>
+      <a href="{% url 'snapData:map' snapPickle.id %}" class="btn btn-secondary">Map View</a>
+      <a href="{% url 'snapData:mergeGraphs' snapPickle.id %}" class="btn btn-secondary">Merge Graphs</a>
+    </p>
+    {% endwith %}
+    
+    <p><a href="{% url 'snapData:index' %}">Return to Home</a></p>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block modal %}
+<!-- Modal -->
+<div id="clusteringModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Modal content-->
+    <div class="modal-content modal-text">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLongTitle">Average Clustering Coefficient</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><b>What is the average clustering coefficient?</b></p>
+
+        <p>To calculate the average clustering coefficient, we first calculate the <a href="https://en.wikipedia.org/wiki/Clustering_coefficient#Local_clustering_coefficient" target="_blank" class="btn-link">local clustering coefficient</a> for each stop in the network. For each stop, we look at all of its neighbors and count how many connections exist between them. We then divide this value by the maximum number of connections that could exist between its neighbors (e.g., the maximum number of connections between 4 stops is 6) to obtain the local clustering coefficient.
+
+        <p>We take the mean of the local clustering coefficient over all nodes in the network to obtain the average clustering coefficient.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "snapData/simple.html" %}
+
+{% block title %}Load a Graph - Transitcat{% endblock %}
+
+{% block navlinks %}
+<a class="nav-link" href="{% url 'snapData:index' %}">Home</a>
+<a class="nav-link" href="{% url 'snapData:upload' %}">Upload</a>
+<a class="nav-link active" href="{% url 'snapData:load' %}">Load</a>
+{% endblock %}
+
+{% block main %}
+{% if latest_gtfs_list %}
+    <h1 class="cover-heading">Most recent graphs:</h1>
+    <p class="lead">
+    {% for snap_pickle in latest_gtfs_list %}
+        <a href="{% url 'snapData:detail' snap_pickle.id %}" class="btn btn-lg btn-secondary">{{ snap_pickle.name }}</a>
+        {% if forloop.counter|divisibleby:3 %}
+          </p>
+          <p>
+        {% endif %}
+    {% endfor %}
+    </p>
+{% else %}
+    <p class="lead">Most recent graphs:>No graphs are available.</p>
+{% endif %}
+
+<p><a href="{% url 'snapData:index' %}">Return to Home</a></p>
+{% endblock %}

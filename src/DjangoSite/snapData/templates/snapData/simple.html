@@ -1,0 +1,106 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'images/favicon.png' %}">
+
+    <title>{% block title %}{% endblock %}</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap/css/bootstrap.min.css' %}" />
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'bootstrap/css/cover.css' %}" rel="stylesheet">
+    <!-- #F4F9F4 #C4E3CB #8AAE92 #516151 -->
+    <style type="text/css">
+      .cover-container {
+        max-width: 50em;
+      }
+      html,
+      body {
+        height: 100%;
+        color: #F4F9F4;
+        background-color: #7A9E82;
+      }
+      sup {
+        color: #516151;
+        text-shadow: none;
+      }
+      .nav-masthead .nav-link {
+        color: #C4E3CB;
+      }
+      .nav-masthead .active {
+        color: #F4F9F4;
+        border-bottom-color: #F4F9F4;
+      }
+      .btn-link,
+      .btn-link:hover,
+      .btn-link:focus {
+        color: blue;
+        text-shadow: none;
+      }
+      .btn-secondary {
+        color: #F4F9F4;
+        background-color: #516151;
+        border: .05rem solid #516151;
+      }
+      .logo {
+        max-height: 1.1em;
+      }
+      .mastfoot {
+        color: #C4E3CB;
+      }
+      hr {    
+        border-top: 1px solid #f4f9f4;
+      }
+    </style>
+    {% block style %}
+    {% endblock %}
+  </head>
+    <body class="text-center">
+
+
+        <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+          <header class="masthead mb-auto">
+            <div class="inner">
+              <h3 class="masthead-brand">Transitcat</h3>
+              <nav class="nav nav-masthead justify-content-center">
+                {% block navlinks %}
+                <a class="nav-link" href="{% url 'snapData:index' %}">Home</a>
+                <a class="nav-link" href="{% url 'snapData:upload' %}">Upload</a>
+                <a class="nav-link" href="{% url 'snapData:load' %}">Load</a>
+                {% endblock %}
+              </nav>
+            </div>
+          </header>
+
+            <main role="main" class="inner cover">
+                {% block main %}
+                {% endblock %}
+            </main>
+
+            {% block modal %}
+            {% endblock %}
+
+
+          <footer class="mastfoot mt-auto">
+            <div class="inner">
+              <p><a href="https://github.com/StanfordCS194/Me0w/" target="_blank"><img src="{% static 'images/meow-logo-green.png' %}" alt="Me0w" class="logo"></a></p>
+            </div>
+          </footer>
+        </div>
+
+        {% block jquery %}
+        <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+        {% endblock %}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
+
+        {% block scripts %}
+        {% endblock %}
+    </body>
+</html>

@@ -1,0 +1,26 @@
+{% extends "snapData/simple.html" %}
+
+{% block title %}Transitcat{% endblock %}
+
+{% block navlinks %}
+<a class="nav-link active" href="{% url 'snapData:index' %}">Home</a>
+<a class="nav-link" href="{% url 'snapData:upload' %}">Upload</a>
+<a class="nav-link" href="{% url 'snapData:load' %}">Load</a>
+{% endblock %}
+
+{% block main %}
+<h1 class="cover-heading">Welcome.</h1>
+<p class="lead">Start analysing public transit networks now.</p>
+<p class="lead">
+  <a href="{% url 'snapData:upload' %}" class="btn btn-lg btn-secondary">Upload</a>
+  <a href="{% url 'snapData:load' %}" class="btn btn-lg btn-secondary">Load</a>
+
+    {% if latest_gtfs_list %}
+        <p>Recent graphs:</p>
+        {% for snap_pickle in latest_gtfs_list %}
+            
+            <p class="lead"><a href="{% url 'snapData:detail' snap_pickle.id %}" class="btn btn-secondary">{{ snap_pickle.name }}</a></p>
+        {% endfor %}
+    {% endif %}
+</p>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "snapData/simple.html" %}
+
+{% block title %}Merge a Network with {{ snapPickle.name }} - Transitcat{% endblock %}
+
+{% block main %}
+<h1>Merge Networks with {{ snapPickle.name }}</h1>
+<p class="lead">Combine different public transit networks to see how they interact with one another.</p>
+<form method="post">
+  {% csrf_token %}
+  <div class="form-group">
+    <label for="name">Name of Merged Network</label>
+    <input type="text" class="form-control" name="name" id="name" aria-describedby="nameHelp" placeholder="Enter name">
+  </div>
+
+  <p>Merge with:</p>
+
+  {% for oSP in otherSnapPickles %}
+  <div class="form-check form-check-inline">
+    <input type="checkbox" name="{{oSP.id}}" value="{{oSP.name}}" id="{{oSP.id}}" class="form-check-input">
+    <label class="form-check-label" for="{{oSP.id}}">{{oSP.name}}</label>
+  </div>
+  {% endfor %}
+  <p></p>
+
+  <input type="submit" value="Merge" class="btn btn-lg btn-secondary">
+</form>
+<p></p>
+<a href="{% url 'snapData:detail' id %}" class="btn btn-secondary">Back</a>
+{% endblock %}

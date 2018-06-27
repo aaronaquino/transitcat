@@ -1,0 +1,98 @@
+{% extends "snapData/simple.html" %}
+{% load static %}
+
+{% block title %}Update Onestop IDs - Transitcat{% endblock %}
+
+{% block style %}
+<style>
+  .modal-text {
+    color: black;
+    text-align: left;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+
+  img {
+      border: none;
+      display: block;
+      margin: 0 auto;
+  }
+
+  form {
+    text-align: left;
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .valid-feedback {
+    color: #F4F9F4;
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<h1>Update Transitland Onestop IDs for  {{ name }}</h1>
+<p class="lead">Set a Transitland Onestop ID<a href=# data-toggle='modal' data-target='#onestopModal'><sup>[?]</sup></a> for each network so that we can compute even more accurate, up-to-date data. </p>
+<form method="post">
+  {% csrf_token %}
+
+  {% for netAndId in netsAndIds %}
+  <div class="form-group">
+    <label class="form-label" for="name">Onestop ID for {{netAndId.0}}</label>
+    {% with str_length=netAndId.1|length %}
+    <input type="text" name="{{netAndId.0}}" id="{{netAndId.0}}" aria-describedby="nameHelp" placeholder="Enter Onestop ID for {{netAndId.0}}" value="{{netAndId.1}}" class="form-control {% if str_length != 0 %}is-valid{% endif %}">
+    {% if str_length != 0 %}
+      <div class="valid-feedback">
+        Looks good!
+      </div>
+    {% endif %}
+    {% endwith %}
+  </div>
+  {% endfor %}
+  <p></p>
+
+  <div class="center">
+    <input type="submit" value="Update" class="btn btn-lg btn-secondary">
+  </div>
+</form>
+<p></p>
+<a href="{% url 'snapData:detail' id %}" class="btn btn-secondary">Back</a>
+{% endblock %}
+
+{% block modal %}
+<!-- Modal -->
+<div id="onestopModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Modal content-->
+    <div class="modal-content modal-text">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLongTitle">Transitland Onestop IDs</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><b>Why add a Transitland Onestop ID?</b></p>
+        <p>In order to enable additional functionality, we'll need you to input the Transitland Onestop ID for your transit network.</p>
+        <p><b>How do I find the Transitland Onestop ID for my network?</b></p>
+        <p>
+          <img src="{% static 'images/transitland_ID_instructions.gif' %}" alt="GIF of How to Find Caltrain's Onestop ID" class="center">
+          <ol>
+          <li>Head over to the <a href="https://transit.land/feed-registry/" target="_blank" class="btn-link">Transitland Feed Registry.</a></li>
+          <li>Search for your network and click on its name.</li>
+          <li>Scroll down to the section called 'Feed Detail'. Copy the text listed next to 'Onestop ID'.</li>
+          <li>Paste the text into the appropriate box below.</li>
+          </ol>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

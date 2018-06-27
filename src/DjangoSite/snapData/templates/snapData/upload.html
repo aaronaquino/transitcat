@@ -1,0 +1,111 @@
+{% extends "snapData/simple.html" %}
+{% load static %}
+
+{% block title %}Upload a Graph - Transitcat{% endblock %}
+
+{% block style %}
+<style>
+  .modal-text {
+    color: black;
+    text-align: left;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+
+  img {
+      border: none;
+      display: block;
+      margin: 0 auto;
+  }
+
+  form {
+    text-align: left;
+  }
+
+  .center {
+    text-align: center;
+  }
+</style>
+{% endblock %}
+
+{% block navlinks %}
+<a class="nav-link" href="{% url 'snapData:index' %}">Home</a>
+<a class="nav-link active" href="{% url 'snapData:upload' %}">Upload</a>
+<a class="nav-link" href="{% url 'snapData:load' %}">Load</a>
+{% endblock %}
+
+{% block main %}
+<h1>Upload a Public Transit File</h1>
+<p class="lead">Start analysing public transit networks via GTFS.</p>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <div class="center">
+    <button type="submit" class="btn btn-lg btn-secondary">Upload</button>
+  </div>
+</form>
+<p></p>
+<p><a href="{% url 'snapData:index' %}">Return to Home</a></p>
+{% endblock %}
+
+{% block modal %}
+<!-- Modal -->
+
+<div id="onestopModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Modal content-->
+    <div class="modal-content modal-text">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLongTitle">Transitland Onestop IDs</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><b>Why add a Transitland Onestop ID?</b></p>
+        <p>In order to enable additional functionality, we'll need you to input the Transitland Onestop ID for your transit network.</p>
+        <p><b>How do I find the Transitland Onestop ID for my network?</b></p>
+        <p>
+          <img src="{% static 'images/transitland_ID_instructions.gif' %}" alt="GIF of How to Find Caltrain's Onestop ID" class="center">
+          <ol>
+          <li>Head over to the <a href="https://transit.land/feed-registry/" target="_blank" class="btn-link">Transitland Feed Registry.</a></li>
+          <li>Search for your network and click on its name.</li>
+          <li>Scroll down to the section called 'Feed Detail'. Copy the text listed next to 'Onestop ID'.</li>
+          <li>Paste the text into the appropriate box below.</li>
+          </ol>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="gtfsModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Modal content-->
+    <div class="modal-content modal-text">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLongTitle">GTFS</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><b>What is GTFS?</b></p>
+        <p><a href="https://developers.google.com/transit/gtfs/" target="_blank" class="btn-link">GTFS</a>, or the General Transit Feed Specification, is a common format for public transportation schedules and associated geographic information. Specifically, GTFS is a series of text files (often zipped together) that a public transit agency publishes online for developers (like us!) to use to build cool applications.</p>
+
+        <p>The <a href="https://transit.land/feed-registry/" target="_blank" class="btn-link">Transitland Feed Registry</a> is a great place to find which GTFS feeds are available as well as where you can download them.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

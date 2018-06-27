@@ -1,0 +1,471 @@
+{% extends "snapData/simple.html" %}
+{% load static %}
+{% load dict_search %}
+
+{% block title %}Map of {{stop.stop_name}} in {{name}} - Transitcat{% endblock %}
+
+{% block style %}
+<style>
+  #map {
+    width: 100%;
+    height: 400px;
+    background-color: grey;
+  }
+  #mapHeading {
+    color: black;
+    text-align: left;
+    text-shadow: 0 0 0 rgba(0, 0, 0, .5);
+  }
+
+  #estimateModal,
+  #criticalityModal {
+    text-align: left
+  }
+  .black {
+    color: black;
+  }
+  a:hover,
+  a.selected {
+    color: blue;
+    background: #efefef;
+  }
+  .modal-text {
+    color: black;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<h3>Map of {{stop.stop_name}} in {{name}}</h3>
+<div class="row">
+  <div class="col-sm-8">
+    <div id="map"></div>
+  </div>
+
+  <div class="col-sm-4">
+    <p>Average travel time to a stop in minutes: {% widthratio avg_path_length 60 1 %}</p>
+    <p><img src='http://maps.google.com/mapfiles/ms/icons/red-dot.png'>{{stop.stop_name}}<br>
+      <img src='http://maps.google.com/mapfiles/ms/icons/yellow-dot.png'>{{neighbors|length}} neighboring stops<br>
+      <img src='http://maps.google.com/mapfiles/ms/icons/blue-dot.png'>{{nodeList|length}} total stops</p>
+
+    <hr>
+    
+    <p id="status">See where you can go from {{stop.stop_name}} by clicking on the red marker.</p>
+  <a href="{% url 'snapData:map' id %}" class="btn btn-secondary">Back to Map</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block modal %}
+<!-- Modal -->
+<div id="criticalityModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Modal content-->
+    <div class="modal-content modal-text">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLongTitle">Criticality</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <p><b>What is criticality?</b></p>
+
+        <p>For a given stop in the network, we compute its average travel time to every other stop. We then average these values over all stops in the network to get a number called the average farness centrality.</p>
+
+        <p>To compute the criticality of an connection in our network, we remove that connection and then recompute the average farness centrality. The difference between our old and new average farness centrality (which will always be nonnegative) is called criticality.</p>
+
+        <p>Note that we cannot compute criticality if removing a connection causes our network to be split into two disconnected components, as it now becomes impossible to travel between certain stops in the network.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="estimateModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Modal content-->
+    <div class="modal-content modal-text">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLongTitle">Why is this an estimation?</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>We can estimate isochrone information based off the GTFS data you’ve provided. These results are limited, however, because they assume:</p>
+          <ol>
+          <li>No time is needed to transfer between different lines or modes of transit.</a></li>
+          <li>All lines for a given network are running at all times of the day.</li>
+          </ol>
+        <p><b>How can I make these estimations more precise?</b></p>
+        <p>
+          Providing us with the Transitland Onestop IDs for your networks is an easy way to eliminate both of the above assumptions and allow us to provide you with more accurate isochrones. You can input your Transitland Onestop IDs <a href="{% url 'snapData:updateFeeds' id %}" class="btn-link">here</a>.
+        </p>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+map = 0
+infowindow = 0
+
+/* Uses the polygon function to draw a circle. This is necessary to concatenate circles, though is a little less accurate than the normal circle drawing function.
+
+Args:
+  - point: the latlng center of the circle, where lat and lng are float properties of point
+  - radius: the radius of the circle in meters
+  - dir: a helper variable??? I took this from stack overflow so I'm not sure. I use dir=1.
+
+Returns:
+  A polygon that looks like a circle.
+*/
+function drawCircle(point, radius, dir)
+{ 
+    var d2r = Math.PI / 180;   // degrees to radians 
+    var r2d = 180 / Math.PI;   // radians to degrees 
+    var earthsradius = 6371008; // radius of the earth in meters
+    var points = 32; 
+
+    // find the raidus in lat/lon 
+    var rlat = (radius / earthsradius) * r2d; 
+    var rlng = rlat / Math.cos(point.lat * d2r); 
+
+    var extp = new Array(); 
+    if (dir==1) {var start=0;var end=points+1} // one extra here makes sure we connect the
+    else{var start=points+1;var end=0}
+    for (var i=start; (dir==1 ? i < end : i > end); i=i+dir)  
+    {
+        var theta = Math.PI * (i / (points/2)); 
+        ey = point.lng + (rlng * Math.cos(theta)); // center a + radius x * cos(theta) 
+        ex = point.lat + (rlat * Math.sin(theta)); // center b + radius y * sin(theta) 
+        extp.push(new google.maps.LatLng(ex, ey));
+    }
+    return extp;
+  }
+   
+
+/* Creates the map as follows:
+1) centers the map
+2) adds nodes to the map
+3) adds edges to the map
+4) draws walking circles around each node
+5) creates a draggable marker for isochrone functionality
+*/
+markerDict = {}
+function initMap() {
+  //creates and centers the map
+  var center = {lat: {{stop.lat}}, lng: {{stop.lng}} };
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 13,
+    center: center
+  });
+  var marker, content, latlng;
+  infowindow = new google.maps.InfoWindow()
+
+
+  icons = ['http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+           'http://maps.google.com/mapfiles/ms/icons/yellow-dot.png',
+           'http://maps.google.com/mapfiles/ms/icons/blue-dot.png']
+
+  {% for node in nodeList %}
+    // creates markers for nodes
+    latlng = {lat: {{node.lat}}, lng: {{node.lng}} }
+    marker = new google.maps.Marker({
+      position: latlng,
+      map: map,
+      title: "{{node.stop_name}}"
+    });
+
+    {% if node == stop %}
+      marker.setIcon(icons[0])
+      content = '<div class=\"btn btn-link\">{{node.stop_name}}</div>'
+
+      timeValue = "17:00"
+      dayValue = 2
+      {% if use_transitland %}
+        content += `
+            <div class="modal-text">
+            <p>Calculate where you can go from {{node.stop_name}} at</p>
+            <form>
+              <input id="time" type="time" name="usr_time" value="17:00" onchange="changeTime();">
+              on a
+
+              <select id="day" name="day" onchange="changeDay();">
+                <option value="6">Sunday</option>
+                <option value="0">Monday</option>
+                <option value="1">Tuesday</option>
+                <option value="2" selected="selected">Wednesday</option>
+                <option value="3">Thursday</option>
+                <option value="4">Friday</option>
+                <option value="5">Saturday</option>
+              </select>
+
+              <div id="formSubmit" class="center">
+                <a href="#" onclick="calculateIsochrone()" class="btn btn-link">Calculate</a>
+              </div>
+            </form>
+            </div>
+        `;
+
+      {% else %}
+        content += `
+            <div class="modal-text">
+              <div id="formSubmit" class="center">
+                <a href="#" onclick="calculateIsochrone()" class="btn-link">
+                Estimate where you can go from<br>{{node.stop_name}}<a href=# data-toggle='modal' data-target='#estimateModal' class='black'><sup>[?]</sup></a></a><br><br>
+              </div>
+            </div>
+        `;
+      {% endif %}
+      stopMarker = marker
+    {% else %}
+
+      {% if node.stop_name in neighbors %}
+        marker.setIcon(icons[1])
+      {% else %}
+        marker.setIcon(icons[2])
+      {% endif %}
+      content = "<a href=\"{% url 'snapData:mapStop' id node.stop_id %}\" class=\"btn btn-link\">" + "{{node.stop_name}}</a>";
+
+      content += '<div id="mapHeading"><p>Shortest travel time from<br>{{stop.stop_name}} to<br>{{node.stop_name}}<br>is {% widthratio dist|get_item:forloop.counter0 60 1 %} min</p></div>'
+    {% endif %}
+
+    markerDict["{{node.stop_id}}"] = [marker, content]
+    // add criticality option
+    {% if node.stop_name in neighbors %}
+      content += '<a href="#" onclick="criticality(\'{{node.stop_id}}\')" class="btn-link">' + "Calculate criticality</a><a href=# data-toggle='modal' data-target='#criticalityModal' class='black'><sup>[?]</sup></a>";
+    {% endif %}
+
+    // creates info windows for each marker
+    google.maps.event.addListener(marker,'click', (function(marker,content,infowindow){ 
+        return function() {
+            infowindow.setContent(content);
+            infowindow.open(map,marker);
+            {% if use_transitland %}
+              if (marker == stopMarker) {
+                document.getElementById("time").value = timeValue;
+                document.getElementById("day").value = dayValue;
+              }
+            {% endif %}
+        };
+    })(marker,content,infowindow)); 
+
+    // if it's the focused stop, open the info window now
+    {% if node == stop %}
+      infowindow.setContent(content);
+      infowindow.open(map,marker);
+    {% endif %}
+  {% endfor %}
+  console.log(markerDict)
+
+  walkingCircles = [[], [], []]
+  peanuts = []
+
+  // draws the route
+
+  {% if routes %}
+  {% for route in routes %}
+  routeCoordinates = []
+
+  {% for coord in route.coordinates %}
+  routeCoordinates.push({'lat': {{coord.lat}}, 'lng': {{coord.lng}} })
+  {% endfor %}
+
+  routeColor = '#{{route.color}}'
+  routeOutline = new google.maps.Polyline({
+    path: routeCoordinates,
+    geodesic: true,
+    strokeColor: '#000000',
+    strokeOpacity: 1.0,
+    strokeWeight: 4
+  });
+  routePath = new google.maps.Polyline({
+    path: routeCoordinates,
+    geodesic: true,
+    strokeColor: routeColor,
+    strokeOpacity: 1.0,
+    strokeWeight: 2
+  });
+  routeOutline.setMap(map);
+  routePath.setMap(map);
+  {% endfor %}
+  {% endif %}
+}
+
+function changeTime() {
+  var timeSelector = document.getElementById("time")
+  timeValue = timeSelector.value
+}
+
+function changeDay() {
+  var daySelector = document.getElementById("day")
+  dayValue = daySelector.value
+}
+
+function criticality(neighbor_id) {
+  console.log(neighbor_id)
+  console.log(markerDict[neighbor_id])
+
+  arr = markerDict[neighbor_id];
+  marker = arr[0]
+  loadingContent = arr[1]
+  google.maps.event.clearListeners(marker, 'click');
+
+  loadingContent += "<div class='black'> Calculating criticality...<a href=# data-toggle='modal' data-target='#criticalityModal' class='black'><sup>[?]</sup></a></div>"
+
+  google.maps.event.addListener(marker,'click', (function(marker,content,infowindow){ 
+      return function() {
+          infowindow.setContent(content);
+          infowindow.open(map,marker);
+      };
+  })(marker,loadingContent,infowindow)); 
+
+  infowindow.setContent(loadingContent);
+  infowindow.open(map,marker);
+
+  $.ajax({
+      url: '/snapData/ajax/criticality/',
+      data: {
+        'graph_id': {{id}},
+        'stop_id': '{{stop.stop_id}}',
+        'neighbor_id': neighbor_id,
+      },
+      dataType: 'json',
+      success: function (response) {
+        var criticality = response['criticality']
+        var neighbor_name = response['neighbor_name']
+        console.log(criticality)
+
+        arr = markerDict[neighbor_id];
+        marker = arr[0]
+        content = arr[1]
+        google.maps.event.clearListeners(marker, 'click');
+
+        if (criticality == -1.0) {
+          content += "<div id='mapHeading'><p>Cannot compute criticality because removing this edge splits the network into two disconnected components<a href=# data-toggle='modal' data-target='#criticalityModal' class='black'><sup>[?]</sup></a></p></div>"
+        } else {
+          content += "<div id='mapHeading'><p>The criticality of this connection<br>is " + criticality.toFixed(2) + " seconds<a href=# data-toggle='modal' data-target='#criticalityModal' class='black'><sup>[?]</sup></a></p></div>"
+        }
+
+        google.maps.event.addListener(marker,'click', (function(marker,content,infowindow){ 
+            return function() {
+                infowindow.setContent(content);
+                infowindow.open(map,marker);
+            };
+        })(marker,content,infowindow)); 
+
+        infowindow.setContent(content);
+        infowindow.open(map,marker);
+      }
+    })
+}
+
+function calculateIsochrone() {
+  // don't allow the user to drag the isochrone marker until computation is done
+
+  pos = stopMarker.getPosition()
+  console.log(pos.lat())
+  console.log(pos.lng())
+
+  var timeArr = timeValue.split(":");
+  var hours = parseInt(timeArr[0]);
+  var min = timeArr[1];
+  var suffix = hours >= 12 ? "PM":"AM";
+  hours = ((hours + 11) % 12 + 1);
+  var timeString = hours + ":" + min + " " + suffix;
+
+  {% if use_transitland %}
+    var daySelector = document.getElementById("day")
+    var dayString = daySelector.options[daySelector.selectedIndex].text
+
+    document.getElementById("status").innerHTML = "Calculating reachable area starting from {{stop.stop_name}} within 10, 20, and 30 minutes starting at " + timeString + " on a typical " + dayString + "..."
+    document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="calculateIsochrone()" class="btn btn-link disabled">Calculating...</a>'
+  {% else %}
+    var dayValue = 2
+    var dayString = "Wednesday"
+
+    document.getElementById("status").innerHTML = "Calculating approximate reachable area starting from {{stop.stop_name}} within 10, 20, and 30 minutes.<a href=# data-toggle='modal' data-target='#estimateModal'><sup>[?]</sup></a>" 
+    document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="calculateIsochrone()" class="btn btn-link disabled">Estimating...</a>'
+  {% endif %}
+
+  $.ajax({
+      url: '/snapData/ajax/isochrone/',
+      data: {
+        'id': {{id}},
+        'lat': pos.lat(),
+        'lng': pos.lng(),
+        'time': timeValue,
+        'day': dayValue,
+      },
+      dataType: 'json',
+      success: function (response) {
+        for (var i = 0; i < peanuts.length; i++) {
+          peanut = peanuts[i]
+          peanut.setMap(null)
+        }
+
+        walkingCircles = [[], [], []]
+        peanuts = []
+
+        for (var i = 0; i < response['isochrones'].length; i++) {
+          isochroneList = response['isochrones'][i]
+          for (var j = 0; j < isochroneList.length; j++) {
+            isochroneCircle = isochroneList[j]
+            latlng = {'lat': isochroneCircle[0], 'lng': isochroneCircle[1]}
+            var visibleCircle = drawCircle(latlng, isochroneCircle[2], 1)
+            walkingCircles[i].push(visibleCircle)}
+        }
+
+
+        for (var i = 0; i < walkingCircles.length; i++) {
+          console.log(walkingCircles[i])
+          var peanut = new google.maps.Polygon({
+            paths: walkingCircles[i],
+            strokeOpacity: 0,
+            fillColor: "#C64D45",
+            fillOpacity: 0.3
+          });
+          peanut.setMap(map);
+          peanuts.push(peanut)
+        }
+        console.log(walkingCircles)
+
+
+        {% if use_transitland %}
+          document.getElementById("status").innerHTML = "Showing reachable area starting from {{stop.stop_name}} within 10, 20, and 30 minutes starting at " + timeString + " on a typical " + dayString + "." 
+          document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="calculateIsochrone()" class="btn btn-link">Calculate</a>'
+        {% else %}
+          document.getElementById("status").innerHTML = 'Showing approximate reachable area starting from {{stop.stop_name}} within 10, 20, and 30 minutes.<a href=# data-toggle="modal" data-target="#estimateModal"><sup>[?]</sup></a>'
+          document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="calculateIsochrone()" class="btn-link">Estimate where you can go from<br>{{stop.stop_name}}</a><a href=# data-toggle="modal" data-target="#estimateModal" class="black"><sup>[?]</sup></a>'
+        {% endif %}
+      }
+    })
+}
+
+
+</script>
+<script async defer
+src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap">
+</script>
+{% endblock %}
+
+{% block jquery %}
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock %}

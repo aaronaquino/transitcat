@@ -1,0 +1,519 @@
+{% extends "snapData/simple.html" %}
+{% load static %}
+
+{% block title %}Map of {{name}} - Transitcat{% endblock %}
+
+{% block style %}
+<style>
+  #map {
+    width: 100%;
+    height: 400px;
+    background-color: #516151;
+  }
+  #mapHeading {
+    color: black;
+    text-align: left;
+    text-shadow: none;
+  }
+  #SearchButton {
+    border: none;
+  }
+
+  #SearchButton:hover,
+  #SearchButton:focus  {
+    color: #516151;
+    background-color: #C4E3CB;
+    border: none;
+  }
+
+  #estimateModal {
+    text-align: left
+  }
+  .modal-text {
+    color: black;
+    text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  .a.disabled {
+    pointer-events: none;
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<h3>Map of {{name}}</h3>
+<div class="input-group mb-3">
+  <input type="text" class="form-control" placeholder="Find businesses (gyms, groceries, tacos) near your stops" aria-label="Find Businesses" aria-describedby="basic-addon2" id="SearchTerm">
+  <div class="input-group-append">
+    <button class="btn btn-secondary" type="button" id="SearchButton">Search</button>
+  </div>
+
+</div>
+<div class="row">
+  <div class="col-sm-8">
+    <div id="map"></div>
+  </div>
+
+  <div class="col-sm-4">
+    <p id="results">
+      <p id="status">Showing walkable area starting from stops within 10, 20, and 30 minutes.<br><br>Drag the large red marker to see where you can go via {{name}}.</p>
+      <p id="10min"></p>
+      <p id="20min"></p>
+      <p id="30min"></p>
+    </p>
+  <a href="{% url 'snapData:detail' id %}" class="btn btn-secondary">Back</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block modal %}
+<div id="estimateModal" class="modal fade" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+
+    <!-- Modal content-->
+    <div class="modal-content modal-text">
+      <div class="modal-header">
+        <h4 class="modal-title" id="exampleModalLongTitle">Why is this an estimation?</h4>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>We can estimate isochrone information based off the GTFS data you’ve provided. These results are limited, however, because they assume:</p>
+          <ol>
+          <li>No time is needed to transfer between different lines or modes of transit.</a></li>
+          <li>All lines for a given network are running at all times of the day.</li>
+          </ol>
+        <p><b>How can I make these estimations more precise?</b></p>
+        <p>
+          Providing us with the Transitland Onestop IDs for your networks is an easy way to eliminate both of the above assumptions and allow us to provide you with more accurate isochrones. You can input your Transitland Onestop IDs <a href="{% url 'snapData:updateFeeds' id %}" class="btn-link">here</a>.
+        </p>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+map = 0
+infowindow = 0
+searchDimensions = [[], [], []]
+
+/* Uses the polygon function to draw a circle. This is necessary to concatenate circles, though is a little less accurate than the normal circle drawing function.
+
+Args:
+  - point: the latlng center of the circle, where lat and lng are float properties of point
+  - radius: the radius of the circle in meters
+  - dir: a helper variable??? I took this from stack overflow so I'm not sure. I use dir=1.
+
+Returns:
+  A polygon that looks like a circle.
+*/
+function drawCircle(point, radius, dir)
+{ 
+    var d2r = Math.PI / 180;   // degrees to radians 
+    var r2d = 180 / Math.PI;   // radians to degrees 
+    var earthsradius = 6371008; // radius of the earth in meters
+    var points = 32; 
+
+    // find the raidus in lat/lon 
+    var rlat = (radius / earthsradius) * r2d; 
+    var rlng = rlat / Math.cos(point.lat * d2r); 
+
+    var extp = new Array(); 
+    if (dir==1) {var start=0;var end=points+1} // one extra here makes sure we connect the
+    else{var start=points+1;var end=0}
+    for (var i=start; (dir==1 ? i < end : i > end); i=i+dir)  
+    {
+        var theta = Math.PI * (i / (points/2)); 
+        ey = point.lng + (rlng * Math.cos(theta)); // center a + radius x * cos(theta) 
+        ex = point.lat + (rlat * Math.sin(theta)); // center b + radius y * sin(theta) 
+        extp.push(new google.maps.LatLng(ex, ey));
+    }
+    return extp;
+}
+
+/* Creates the map as follows:
+1) centers the map
+2) adds nodes to the map
+3) adds edges to the map
+4) draws walking circles around each node
+5) creates a draggable marker for isochrone functionality
+*/
+walkingCircles = [[], [], []]
+peanuts = []
+function initMap() {
+  //creates and centers the map
+  var center = {lat: {{avgLat}}, lng: {{avgLng}} };
+  map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 10,
+    center: center
+  });
+  var marker, content, latlng;
+  infowindow = new google.maps.InfoWindow()
+
+  walkingCircles = [[], [], []]
+  
+  {% for node in nodeList %}
+  // creates markers for nodes
+  latlng = {lat: {{node.lat}}, lng: {{node.lng}} }
+  marker = new google.maps.Marker({
+    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+    position: latlng,
+    map: map,
+    title: "{{node.stop_name}}"
+  });
+  content = "<a href=\"{% url 'snapData:mapStop' id node.stop_id %}\" class=\"btn btn-link\">" + "{{node.stop_name}}</a>";
+
+  // adds walking circles around each stop
+  for (var i = 0; i < walkingCircles.length; i++) {
+    radius = 1000 * (i + 1)
+    var visibleCircle = drawCircle(latlng, radius, 1)
+    walkingCircles[i].push(visibleCircle)
+
+    searchDimensions[i].push({'lat': latlng.lat, 'lng': latlng.lng, 'radius': radius})
+  }
+
+  // creates info windows for each marker
+  google.maps.event.addListener(marker,'click', (function(marker,content,infowindow){ 
+      return function() {
+          infowindow.setContent(content);
+          infowindow.open(map,marker);
+      };
+  })(marker,content,infowindow)); 
+
+  // creates routes between nodes - needs to be updated so that it adheres to routes and not
+  // the random order that we fetch the nodes in
+  {% endfor %}
+
+
+  // draws the walking circles
+  console.log(walkingCircles)
+  for (var i = 0; i < walkingCircles.length; i++) {
+    var peanut = new google.maps.Polygon({
+      paths: walkingCircles[i],
+      strokeOpacity: 0,
+      fillColor: "#C64D45",
+      fillOpacity: 0.3
+    });
+    peanut.setMap(map);
+    peanuts.push(peanut)
+  }
+
+  // makes a draggable marker that will be the start position of the isochrone map
+  isochroneMarker = new google.maps.Marker(
+  {
+      map:map,
+      draggable:true,
+      animation: google.maps.Animation.DROP,
+      position: center
+  });
+  timeValue = "17:00"
+  dayValue = 2
+  {% if use_transitland %}
+    content = `
+        <div class="modal-text">
+        <br><h6>Find where you can go</h6>
+        <p>Calculate where you can go from this marker at</p>
+        <form>
+          <input id="time" type="time" name="usr_time" value="17:00" onchange="changeTime();">
+          on a
+
+          <select id="day" name="day" onchange="changeDay();">
+            <option value="6">Sunday</option>
+            <option value="0">Monday</option>
+            <option value="1">Tuesday</option>
+            <option value="2" selected="selected">Wednesday</option>
+            <option value="3">Thursday</option>
+            <option value="4">Friday</option>
+            <option value="5">Saturday</option>
+          </select>
+
+          <div id="formSubmit" class="center">
+            <a href="#" onclick="geocodePosition()" class="btn btn-link">Calculate</a>
+          </div>
+        </form>
+        </div>
+    `;
+  {% else %}
+    content = `
+        <div class="modal-text">
+        <br><h6>Find where you can go</h6>
+
+          <div id="formSubmit" class="center">
+            <a href="#" onclick="geocodePosition()" class="btn-link">
+            Estimate where you can go from this marker<a href=# data-toggle='modal' data-target='#estimateModal' class='black'><sup>[?]</sup></a></a><br><br>
+          </div>
+        </div>
+    `;
+  {% endif %}
+
+  google.maps.event.addListener(isochroneMarker, 'click', function() 
+  {
+      infowindow.setContent(content);
+      infowindow.open(map,isochroneMarker);
+      {% if use_transitland %}
+        document.getElementById("time").value = timeValue;
+        document.getElementById("day").value = dayValue;
+      {% endif %}
+  });
+  google.maps.event.addListener(isochroneMarker, 'drag', function() 
+  {
+      infowindow.setContent(content);
+      infowindow.open(map,isochroneMarker);
+      {% if use_transitland %}
+        document.getElementById("time").value = timeValue;
+        document.getElementById("day").value = dayValue;
+      {% endif %}
+  });
+
+
+  // draws the route
+  routes = []
+  {% if routes %}
+  {% for route in routes %}
+  routeCoordinates = []
+
+  {% for coord in route.coordinates %}
+  routeCoordinates.push({'lat': {{coord.lat}}, 'lng': {{coord.lng}} })
+  {% endfor %}
+  routeColor = '#{{route.color}}'
+  routeOutline = new google.maps.Polyline({
+    path: routeCoordinates,
+    geodesic: true,
+    strokeColor: '#000000',
+    strokeOpacity: 1.0,
+    strokeWeight: 4
+  });
+  routePath = new google.maps.Polyline({
+    path: routeCoordinates,
+    geodesic: true,
+    strokeColor: routeColor,
+    strokeOpacity: 1.0,
+    strokeWeight: 2
+  });
+  routeOutline.setMap(map);
+  routePath.setMap(map);
+  routes.push(routeOutline)
+  routes.push(routePath)
+  {% endfor %}
+  {% endif %}
+
+}
+
+function changeTime() {
+  var timeSelector = document.getElementById("time")
+  timeValue = timeSelector.value
+}
+
+function changeDay() {
+  var daySelector = document.getElementById("day")
+  dayValue = daySelector.value
+}
+
+/* Will draw the isochrone map. It erases the previous map and then, currently, it displays a circle around the draggable marker.
+This function is called when the draggable marker is moved.
+Some code is commented out since isochrone lookup isn't finished currently.
+Args:
+  - map: the Google map to place the markers upon
+  - pos: the latlng position of the dragged marker
+*/
+isochroneShapes = []
+enterpriseMarkers = []
+function geocodePosition() {
+  // don't allow the user to drag the isochrone marker until computation is done
+  isochroneMarker.setDraggable(false)
+
+  pos = isochroneMarker.getPosition()
+  console.log(pos.lat())
+  console.log(pos.lng())
+
+  var timeArr = timeValue.split(":");
+  var hours = parseInt(timeArr[0]);
+  var min = timeArr[1];
+  var suffix = hours >= 12 ? "PM":"AM";
+  hours = ((hours + 11) % 12 + 1);
+  var timeString = hours + ":" + min + " " + suffix;
+
+  {% if use_transitland %}
+    var daySelector = document.getElementById("day")
+    var dayString = daySelector.options[daySelector.selectedIndex].text
+
+    document.getElementById("status").innerHTML = "Calculating reachable area starting from the large red marker within 10, 20, and 30 minutes starting at " + timeString + " on a typical " + dayString + "..."
+    document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="geocodePosition()" class="btn btn-link disabled">Calculating...</a>'
+  {% else %}
+    var dayValue = 2
+    var dayString = "Wednesday"
+
+    document.getElementById("status").innerHTML = "Calculating approximate reachable area starting from the large red marker within 10, 20, and 30 minutes.<a href=# data-toggle='modal' data-target='#estimateModal'><sup>[?]</sup></a>" 
+    document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="geocodePosition()" class="btn btn-link disabled">Estimating...</a>'
+  {% endif %}
+
+  document.getElementById("10min").innerHTML = ""
+  document.getElementById("20min").innerHTML = ""
+  document.getElementById("30min").innerHTML = ""
+
+  $.ajax({
+      url: '/snapData/ajax/isochrone/',
+      data: {
+        'id': {{id}},
+        'lat': pos.lat(),
+        'lng': pos.lng(),
+        'time': timeValue,
+        'day': dayValue,
+      },
+      dataType: 'json',
+      success: function (response) {
+        for (var i = 0; i < peanuts.length; i++) {
+          peanut = peanuts[i]
+          peanut.setMap(null)
+        }
+
+        for (var i = 0; i < enterpriseMarkers.length; i++) {
+          marker = enterpriseMarkers[i]
+          marker.setMap(null)
+        }
+
+        walkingCircles = [[], [], []]
+        searchDimensions = [[], [], []]
+        peanuts = []
+        enterpriseMarkers = []
+
+        for (var i = 0; i < response['isochrones'].length; i++) {
+          isochroneList = response['isochrones'][i]
+          for (var j = 0; j < isochroneList.length; j++) {
+            isochroneCircle = isochroneList[j]
+            latlng = {'lat': isochroneCircle[0], 'lng': isochroneCircle[1]}
+            var visibleCircle = drawCircle(latlng, isochroneCircle[2], 1)
+            walkingCircles[i].push(visibleCircle)
+
+            searchDimensions[i].push({'lat': latlng.lat, 'lng': latlng.lng, 'radius': isochroneCircle[2]})
+          }
+        }
+
+
+        for (var i = 0; i < walkingCircles.length; i++) {
+          console.log(walkingCircles[i])
+          var peanut = new google.maps.Polygon({
+            paths: walkingCircles[i],
+            strokeOpacity: 0,
+            fillColor: "#C64D45",
+            fillOpacity: 0.3
+          });
+          peanut.setMap(map);
+          peanuts.push(peanut)
+        }
+        console.log(walkingCircles)
+        console.log(searchDimensions)
+
+        for (i = 0; i < routes.length; i++) {
+          routes[i].setMap(null)
+          routes[i].setMap(map)
+        }
+
+        {% if use_transitland %}
+          document.getElementById("status").innerHTML = "Showing reachable area starting from the large red marker within 10, 20, and 30 minutes starting at " + timeString + " on a typical " + dayString + "." 
+          document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="geocodePosition()" class="btn btn-link">Calculate</a>'
+        {% else %}
+          document.getElementById("status").innerHTML = 'Showing approximate reachable area starting from the large red marker within 10, 20, and 30 minutes.<a href=# data-toggle="modal" data-target="#estimateModal"><sup>[?]</sup></a>'
+          document.getElementById("formSubmit").innerHTML = '<a href="#" onclick="geocodePosition()" class="btn-link">Estimate where you can go from this marker</a><a href=# data-toggle="modal" data-target="#estimateModal" class="black"><sup>[?]</sup></a>'
+        {% endif %}
+        document.getElementById("10min").innerHTML = ""
+        document.getElementById("20min").innerHTML = ""
+        document.getElementById("30min").innerHTML = ""
+        isochroneMarker.setDraggable(true)
+      }
+    })
+}
+
+/*
+Sends the server a request to use Yelp to find all enterprises within the walking circles
+around each station. It then drops a marker for each found enterprise and displays how many
+are reachable within a given walking time.
+*/
+function search() {
+  var searchTerm = $("#SearchTerm").val();
+  console.log("Searching Yelp...")
+  console.log(searchTerm);
+  console.log(searchDimensions);
+  console.log(JSON.stringify(searchDimensions));
+
+  icons = ['{% static "images/pin_dark.png" %}',
+           '{% static "images/pin_med.png" %}',
+           '{% static "images/pin_light.png" %}']
+
+  for (var i = 0; i < enterpriseMarkers.length; i++) {
+    marker = enterpriseMarkers[i]
+    marker.setMap(null)
+  }
+
+  $.ajax({
+    url: '/snapData/ajax/searchYelp/',
+    data: {
+      'searchTerm': searchTerm,
+      'searchDimensions': JSON.stringify(searchDimensions),
+    },
+    dataType: 'json',
+    success: function (response) {
+      data = response['data']
+      for (index = 0; index < data.length; index++) {
+        results = data[index]
+        totalResults = Object.entries(results).length
+        for (smallIndex = 0; smallIndex < index; smallIndex++) {
+          totalResults += Object.entries(data[smallIndex]).length
+        }
+        var walkingTime = (index + 1)+"0"
+        console.log(results);
+
+        enterpriseMarkers = []
+        console.log(index)
+        console.log(walkingTime)
+
+        document.getElementById("status").innerHTML = "Found:" 
+        document.getElementById(walkingTime+"min").innerHTML = "<img src=\"" + icons[index] + "\"> " + totalResults + " results within " + walkingTime + " minutes walking from a station"
+
+        for (const [key, val] of Object.entries(results)) {
+          marker = new google.maps.Marker({
+            icon: icons[index],
+            position: {lat: val.lat, lng: val.lng},
+            map: map,
+            title: val.name
+          });
+          content = '<div id="mapHeading"><a href="'+ val.url +'" target="_blank" class="btn-link">' + val.name + '</a></div>';
+
+          // creates info windows for each marker
+          google.maps.event.addListener(marker,'click', (function(marker,content,infowindow){ 
+              return function() {
+                  infowindow.setContent(content);
+                  infowindow.open(map,marker);
+              };
+          })(marker,content,infowindow)); 
+          enterpriseMarkers.push(marker)
+        }
+          
+      }
+    }
+  })
+  document.getElementById("status").innerHTML = "Searching..." 
+  document.getElementById("10min").innerHTML = ""
+  document.getElementById("20min").innerHTML = ""
+  document.getElementById("30min").innerHTML = ""
+}
+
+
+$("#SearchButton").on('click', search)
+
+</script>
+<script async defer
+src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap"></script>
+{% endblock %}
+
+{% block jquery %}
+<script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock %}
