@@ -1,6 +1,6 @@
 ### Local Repository Structure
 
-The GTFS data is too big to be local, so please set up your project tree as shown below. Note that you will need to locally create two directories for Data and Results (e.g., saving graphs and their associated data):
+The GTFS data is too big to be saved within this Github repo, so please set up your local project tree as shown below. Note that you will need to locally create two directories for Data and Results (e.g., saving graphs and their associated data):
 
 ```
 Project/
@@ -18,7 +18,7 @@ Project/
 |
 |--- Results/
 |
-|--- Source/ <--- clone the main Transitcat repo here!
+|--- Source/ <--- clone the Github Transitcat repo here!
 ```
 
 
