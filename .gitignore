@@ -1,0 +1,5 @@
+# Python byte code #
+####################
+*.pyc
+
+*.DS_Store
