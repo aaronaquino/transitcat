@@ -29,7 +29,7 @@ Replace `"YOUR_USERNAME_HERE"` and `"YOUR_PASSWORD_HERE"` with the values you as
 # TODO: Uncomment the line below and add your Yelp API key.
 # HEADERS={"Authorization":"Bearer YOUR_KEY_HERE"}
 ```
-  * Add your Google Maps API key to [`mapStop.html`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/snapData/templates/snapData/mapStop.html) and [`mapTest.html`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/snapData/templates/snapData/mapTest.html). Do so by scrolling down to the section that says:
+  * Add your Google Maps API key to both [`mapStop.html`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/snapData/templates/snapData/mapStop.html) and [`mapTest.html`](https://github.com/aaronaquino/transitcat/blob/master/src/DjangoSite/snapData/templates/snapData/mapTest.html). Do so by scrolling down to the section that says:
 ```
 <script async defer
 src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap">
@@ -46,8 +46,8 @@ Now every time you want to run Transitcat, simply do the following:
 
 
 # Team Members
-Member | Photograph
---- | ---
-Aaron Aquino (aaron33) | <img src="https://aaronaquino.github.io/assets/profile_old.png" width="150" alt="Aaron Aquino"> 
-Tracey Lin (traceyl) | <img src="https://scontent-sjc3-1.xx.fbcdn.net/v/t31.0-8/15585359_1201367849919117_7963034359442281739_o.jpg?_nc_cat=0&oh=3d93468956ab9e74964ca3f5af01f4bf&oe=5BA5816D" width="150" alt="Tracey Lin"> 
-Erik Raucher (eraucher) | <img src="https://scontent.fsea1-1.fna.fbcdn.net/v/t1.0-9/1604902_795937910421737_1690745874_n.jpg?_nc_cat=0&oh=817067c09208ebe1ad6820c9e6c2c4bc&oe=5B74B711" width="150" alt="Erik Raucher">
+Member | Photograph | Email
+--- | --- | ---
+Aaron Aquino (aaron33) | <img src="https://aaronaquino.github.io/assets/profile_old.png" width="150" alt="Aaron Aquino"> | <aquino@cs.stanford.edu>
+Tracey Lin (traceyl) | <img src="https://scontent-sjc3-1.xx.fbcdn.net/v/t31.0-8/15585359_1201367849919117_7963034359442281739_o.jpg?_nc_cat=0&oh=3d93468956ab9e74964ca3f5af01f4bf&oe=5BA5816D" width="150" alt="Tracey Lin"> | <traceylin@alumni.stanford.edu>
+Erik Raucher (eraucher) | <img src="https://scontent.fsea1-1.fna.fbcdn.net/v/t1.0-9/1604902_795937910421737_1690745874_n.jpg?_nc_cat=0&oh=817067c09208ebe1ad6820c9e6c2c4bc&oe=5B74B711" width="150" alt="Erik Raucher"> | <eraucher@yahoo.com>
